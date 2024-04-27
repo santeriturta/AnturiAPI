@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from models import Item, SensorTempHistory, SensorCreate, SensorDelete, SensorErrorUpdate, SensorResponse, SensorTemp, SensorUpdate
-from database import get_db  # Import get_db function from database.py
+from database import get_db
 from pydantic import BaseModel
 import datetime
-from utils import GenerateNewTemp  # Import GenerateNewTemp from utils.py
-from database import Session  # Import Session from database.py
-
+from utils import GenerateNewTemp
+from database import Session
 
 router = APIRouter()
-
 
 def get_sensor_data(db: Session, sensor_id: int):
   """
@@ -97,7 +95,6 @@ async def update_temp(item_id: int, item: SensorTemp, db: Session = Depends(get_
   db_item.temperature = new_temp[0]
   db_item.timeStamp = str(datetime.datetime.now())
 
-  # Create and add new SensorTempHistory entry
   new_history_entry = SensorTempHistory(
       sensor_id=db_item.id,
       temperature=db_item.temperature,
@@ -143,5 +140,3 @@ async def delete_item(item_id: int, item: SensorDelete, db: Session = Depends(ge
   db.delete(db_item)
   db.commit()
   return db_item
-
-#app.include_router(router)
