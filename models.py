@@ -40,3 +40,6 @@ class SensorTemp(BaseModel):
 
 class SensorErrorUpdate(BaseModel):
     errorStatus: bool
+
+class SensorTempsResponse(BaseModel):
+    id: int

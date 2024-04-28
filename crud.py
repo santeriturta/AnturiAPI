@@ -1,39 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException
-from models import Item, SensorTempHistory, SensorCreate, SensorDelete, SensorErrorUpdate, SensorResponse, SensorTemp, SensorUpdate
+from models import Item, SensorTempHistory, SensorCreate, SensorDelete, SensorErrorUpdate, SensorResponse, SensorTemp, SensorUpdate,SensorTempsResponse
 from database import get_db
 from pydantic import BaseModel
 import datetime
 from utils import GenerateNewTemp
 from database import Session
+from typing import Dict, List
 
 router = APIRouter()
 
 def get_sensor_data(db: Session, sensor_id: int):
-  """
-  Fetches sensor data by ID from the database.
-
-  Args:
-      db: Injected database session dependency.
-      sensor_id: ID of the sensor to retrieve data for.
-
-  Returns:
-      The sensor data object from the database, or None if not found.
-  """
   sensor_item = db.query(Item).filter(Item.id == sensor_id).first()
   return sensor_item
-
 
 @router.post("/items/", response_model=SensorResponse)
 async def create_item(item: SensorCreate, db: Session = Depends(get_db)):
   """
-  API endpoint to create a new sensor entry.
-
-  Args:
-      item: Sensor data to create in the database.
-      db: Injected database session dependency.
-
-  Returns:
-      The created sensor data object.
+  API endpoint to create a new sensor.
   """
   db_item = Item(**item.model_dump())
   db_item.errorStatus = False
@@ -60,10 +43,49 @@ async def read_item(item_id: int, db: Session = Depends(get_db)):
   return db_item
 
 
+@router.get("/items/{item_id}/temperatures", response_model=Dict[str, SensorTemp])
+async def showTemps(item_id: int, db: Session = Depends(get_db)):
+    """
+    API endpoint to fetch the last 10 temperatures measured by a sensor.
+
+    Raises:
+        HTTPException: 404 Not Found if the sensor is not found. 
+    """
+    last_ten_temps = db.query(SensorTempHistory) \
+    .filter(SensorTempHistory.sensor_id == item_id) \
+    .order_by(SensorTempHistory.id.desc()) \
+    .limit(10) \
+    .all()
+
+    if not last_ten_temps:
+        raise HTTPException(status_code=404, detail="No temperatures found for sensor")
+
+    sensor_responses = {item.timeStamp: SensorTemp(temperature=item.temperature, timeStamp=item.timeStamp) for item in last_ten_temps}
+
+    return sensor_responses
+
+
+@router.get("/", response_model=List[SensorResponse])
+async def showSensors(db: Session = Depends(get_db)):
+    """
+    API endpoint to fetch all the sensors currently in the db
+
+    Raises:
+        HTTPException: 404 Not Found if no sensors are found.
+    """
+    db_items = db.query(Item).all()
+
+    if not db_items:
+      raise HTTPException(status_code=404, detail="No sensors found")
+    
+    sensor_responses = [SensorResponse(**item.__dict__) for item in db_items]
+
+    return sensor_responses
+
 @router.patch("/items/{item_id}", response_model=SensorResponse)
 async def update_item(item_id: int, item: SensorUpdate, db: Session = Depends(get_db)):
   """
-  API endpoint to change sensor group.
+  API endpoint to change sensors group.
 
   Raises:
       HTTPException: 404 Not Found if the sensor is not found.
