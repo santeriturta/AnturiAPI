@@ -25,7 +25,7 @@ class SensorCreate(BaseModel):
 
 class SensorResponse(BaseModel):
     id: int
-    temperature: float
+    temperature: float | None = None
     errorStatus: bool
 
 class SensorUpdate(BaseModel):
