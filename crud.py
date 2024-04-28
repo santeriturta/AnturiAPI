@@ -85,7 +85,7 @@ async def showSensors(db: Session = Depends(get_db)):
 @router.get("/group", response_model=List[SensorResponse])
 async def showSensors(item_group: str,db: Session = Depends(get_db)):
     """
-    API endpoint to fetch all the sensors currently in the db
+    API endpoint to fetch all the sensors from a certain group currently in the db
 
     Raises:
         HTTPException: 404 Not Found if no sensors are found.
@@ -124,6 +124,8 @@ async def update_temp(item_id: int, item: SensorTemp, db: Session = Depends(get_
 
     Raises:
         HTTPException: 404 Not Found if the sensor is not found.
+
+    Request body does not need to be changed!
     """
     db_item = get_sensor_data(db, item_id)
     if db_item is None:
